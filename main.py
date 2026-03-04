@@ -64,8 +64,9 @@ def health_check():
     """Health check endpoint - verifies database connectivity"""
     try:
         # Verificar conexión a base de datos
+        from sqlalchemy import text
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         return {
             "status": "healthy",
