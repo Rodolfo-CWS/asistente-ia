@@ -62,6 +62,7 @@ async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...)):
         db.close()
 
 @app.get("/health")
+@app.head("/health")
 def health_check():
     """Health check endpoint - verifies database connectivity"""
     try:
