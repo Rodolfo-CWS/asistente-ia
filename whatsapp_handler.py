@@ -142,23 +142,30 @@ class GoalConversationHandler:
         
         message_lower = message.lower()
         
-        fitness_keywords = ['peso', 'bajar', 'adelgazar', 'músculo', 'gym', 
-                           'ejercicio', 'fit', 'dieta', 'calorías']
-        learning_keywords = ['aprender', 'estudiar', 'idioma', 'inglés', 
-                            'curso', 'leer', 'certificación']
-        productivity_keywords = ['hábito', 'meditar', 'rutina', 'despertar', 
-                                'productivo', 'días']
+        fitness_keywords = ['peso', 'bajar', 'adelgazar', 'músculo', 'gym',
+                           'ejercicio', 'fit', 'dieta', 'calorías', 'fitness']
+        learning_keywords = ['aprender', 'estudiar', 'idioma', 'inglés',
+                            'curso', 'leer', 'certificación', 'learning']
+        productivity_keywords = ['hábito', 'meditar', 'rutina', 'despertar',
+                                'productivo', 'productividad', 'días', 'productivity']
         
         fitness_score = sum(1 for kw in fitness_keywords if kw in message_lower)
         learning_score = sum(1 for kw in learning_keywords if kw in message_lower)
         productivity_score = sum(1 for kw in productivity_keywords if kw in message_lower)
-        
+
         scores = {
             'fitness': fitness_score,
             'learning': learning_score,
             'productivity': productivity_score
         }
-        
+
+        # Si todos los scores son 0, preguntar al usuario
+        max_score = max(scores.values())
+        if max_score == 0:
+            # No se detectó ningún tipo claramente, por defecto fitness
+            # En una versión mejorada, aquí se preguntaría al usuario
+            return 'fitness'
+
         return max(scores, key=scores.get)
     
     def _start_fitness_flow(self, user_id: int, message: str) -> str:
