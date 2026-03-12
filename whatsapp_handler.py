@@ -338,16 +338,21 @@ Para armar el mejor plan necesito saber:
         
         return "¿Algo más que quieras agregar?"
     
-    def _handle_progress_logging(self, user_id: int, message: str, 
+    def _handle_progress_logging(self, user_id: int, message: str,
                                  intent: Dict, context: Dict) -> str:
         """Maneja el registro de progreso"""
-        
-        # Obtener objetivos activos del usuario
-        # En producción: consultar DB
+
+        # Obtener objetivos activos del usuario desde la base de datos
+        goals = self.db.query(Goal).filter_by(
+            user_id=user_id,
+            status='active'
+        ).all()
+
         active_goals = [
-            {'id': 1, 'type': 'fitness', 'title': 'Bajar 5kg'}
+            {'id': g.id, 'type': g.goal_type, 'title': g.title}
+            for g in goals
         ]
-        
+
         if not active_goals:
             return "No tienes objetivos activos. ¿Quieres crear uno?"
         
@@ -384,12 +389,18 @@ Para armar el mejor plan necesito saber:
     
     def _handle_view_progress(self, user_id: int, intent: Dict) -> str:
         """Maneja solicitud de ver progreso"""
-        
-        # Obtener objetivos activos
+
+        # Obtener objetivos activos desde la base de datos
+        goals = self.db.query(Goal).filter_by(
+            user_id=user_id,
+            status='active'
+        ).all()
+
         active_goals = [
-            {'id': 1, 'type': 'fitness'}
+            {'id': g.id, 'type': g.goal_type, 'title': g.title}
+            for g in goals
         ]
-        
+
         if not active_goals:
             return "No tienes objetivos activos."
         

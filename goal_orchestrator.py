@@ -48,20 +48,31 @@ class GoalOrchestrator:
         try:
             # Crear objetivo usando el procesador específico
             goal_data = processor.create_goal_from_conversation(user_id, conversation_data)
-            
-            # Aquí se guardaría en la base de datos
-            # goal = Goal(**goal_data, user_id=user_id)
-            # self.db.add(goal)
-            # self.db.commit()
-            
+
+            # Guardar en la base de datos
+            from datetime import datetime
+            goal = Goal(
+                user_id=user_id,
+                goal_type=goal_type,
+                title=goal_data.get('title', f'Objetivo de {goal_type}'),
+                description=goal_data.get('description', ''),
+                status='active',
+                goal_data=goal_data,
+                created_at=datetime.utcnow()
+            )
+            self.db.add(goal)
+            self.db.commit()
+            self.db.refresh(goal)
+
             return {
                 'success': True,
-                'goal_id': 123,  # ID del objetivo creado
+                'goal_id': goal.id,  # ID real del objetivo creado
                 'goal_data': goal_data,
                 'message': self._generate_creation_message(goal_type, goal_data)
             }
-            
+
         except Exception as e:
+            self.db.rollback()
             return {
                 'success': False,
                 'error': str(e)
@@ -89,18 +100,30 @@ class GoalOrchestrator:
         try:
             # Registrar progreso
             log_result = processor.log_progress(goal_id, log_data)
-            
+
+            # Obtener el goal para el user_id
+            goal = self.db.query(Goal).filter_by(id=goal_id).first()
+            if not goal:
+                return {'success': False, 'error': 'Objetivo no encontrado'}
+
             # Guardar en DB
-            # progress_log = ProgressLog(**log_result, goal_id=goal_id)
-            # self.db.add(progress_log)
-            # self.db.commit()
-            
+            from datetime import datetime
+            progress_log = ProgressLog(
+                user_id=goal.user_id,
+                goal_id=goal_id,
+                log_type=log_result.get('log_type', 'update'),
+                log_data=log_result.get('log_data', log_data),
+                timestamp=datetime.utcnow()
+            )
+            self.db.add(progress_log)
+            self.db.commit()
+
             # Calcular progreso actualizado
             progress = processor.calculate_progress(goal_id)
-            
+
             # Generar feedback
             feedback = processor.generate_feedback(progress)
-            
+
             return {
                 'success': True,
                 'progress': progress,
