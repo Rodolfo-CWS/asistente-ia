@@ -87,6 +87,27 @@ def health_check():
 # REST API ENDPOINTS FOR DASHBOARD
 # ==========================================
 
+@app.get("/api/users")
+def list_all_users():
+    """List all users in the database (for debugging)"""
+    db = SessionLocal()
+    try:
+        users = db.query(User).all()
+        return {
+            "total_users": len(users),
+            "users": [
+                {
+                    "id": user.id,
+                    "phone_number": user.phone_number,
+                    "name": user.name,
+                    "created_at": user.created_at.isoformat() if user.created_at else None
+                }
+                for user in users
+            ]
+        }
+    finally:
+        db.close()
+
 @app.get("/api/users/{phone}")
 def get_user_by_phone(phone: str):
     """Get user information by phone number"""
