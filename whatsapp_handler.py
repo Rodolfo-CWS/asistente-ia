@@ -5,7 +5,8 @@ Manejador de conversaciones de WhatsApp para crear y gestionar objetivos
 from typing import Dict, Any, Optional
 from enum import Enum
 from goal_orchestrator import GoalOrchestrator
-from models import Goal
+from models import Goal, ConversationContext
+from datetime import datetime
 
 class ConversationState(Enum):
     """Estados de la conversación"""
@@ -25,10 +26,6 @@ class GoalConversationHandler:
         self.db = db_session
         self.claude = claude_client
         self.orchestrator = GoalOrchestrator(db_session)
-        
-        # Almacenar estado de conversación por usuario
-        self.user_states = {}
-        self.conversation_context = {}
     
     def handle_message(self, user_id: int, phone: str, message: str) -> str:
         """
@@ -38,9 +35,8 @@ class GoalConversationHandler:
             Respuesta a enviar al usuario
         """
 
-        # Obtener o crear estado del usuario
-        state = self.user_states.get(user_id, ConversationState.IDLE)
-        context = self.conversation_context.get(user_id, {})
+        # Obtener o crear contexto del usuario desde DB
+        context = self._get_user_context(user_id)
 
         # Clasificar intención del mensaje usando IA
         intent = self._classify_intent(message, context)
@@ -134,7 +130,7 @@ class GoalConversationHandler:
                 'data': {},
                 'step': 0
             }
-            self.conversation_context[user_id] = context
+            self._save_user_context(user_id, context)
             
             # Iniciar flujo según tipo
             if goal_type == 'fitness':
@@ -222,7 +218,10 @@ Para armar el mejor plan necesito saber:
 
         # Actualizar datos
         creation_data['data'].update(extracted_info)
-        
+
+        # Guardar contexto actualizado
+        self._save_user_context(user_id, context)
+
         # Determinar siguiente pregunta o crear objetivo
         if self._has_all_required_info(goal_type, creation_data['data']):
             # Crear objetivo
@@ -234,7 +233,7 @@ Para armar el mejor plan necesito saber:
             
             # Limpiar contexto
             del context['goal_creation']
-            self.conversation_context[user_id] = context
+            self._save_user_context(user_id, context)
             
             if result['success']:
                 return result['message']
@@ -473,3 +472,24 @@ Ejemplos de lo que puedes decir:
         #     print(f"Claude conversation failed: {e}")
         #     # Fallback a respuesta genérica
         return "Interesante. ¿Puedes contarme más sobre eso?"
+
+    def _get_user_context(self, user_id: int) -> Dict:
+        """Obtiene el contexto de conversación del usuario desde la DB"""
+        ctx_record = self.db.query(ConversationContext).filter_by(user_id=user_id).first()
+        if ctx_record and ctx_record.context_data:
+            return ctx_record.context_data
+        return {}
+
+    def _save_user_context(self, user_id: int, context: Dict):
+        """Guarda el contexto de conversación del usuario en la DB"""
+        ctx_record = self.db.query(ConversationContext).filter_by(user_id=user_id).first()
+        if ctx_record:
+            ctx_record.context_data = context
+            ctx_record.updated_at = datetime.utcnow()
+        else:
+            ctx_record = ConversationContext(
+                user_id=user_id,
+                context_data=context
+            )
+            self.db.add(ctx_record)
+        self.db.commit()

@@ -60,14 +60,23 @@ class ProgressLog(Base):
 class Diet(Base):
     """Para almacenar dietas del usuario"""
     __tablename__ = 'diets'
-    
+
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     goal_id = Column(Integer, ForeignKey('goals.id'))
-    
+
     name = Column(String(100))
     description = Column(Text)
     diet_data = Column(JSON)  # Comidas, calorías, macros, etc.
-    
+
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+
+class ConversationContext(Base):
+    """Para almacenar el contexto de conversación del usuario"""
+    __tablename__ = 'conversation_contexts'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True)
+    context_data = Column(JSON)  # Estado de la conversación
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
