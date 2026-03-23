@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import sessionmaker
@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import anthropic
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
+import requests
 
 from models import Base, User, Goal, ProgressLog
 from whatsapp_handler import GoalConversationHandler
@@ -80,6 +81,76 @@ async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...)):
         resp = MessagingResponse()
         resp.message("Lo siento, hubo un error procesando tu mensaje. Por favor intenta de nuevo.")
         return Response(content=str(resp), media_type="application/xml")
+
+    finally:
+        db.close()
+
+@app.post("/webhook/telegram")
+async def telegram_webhook(request: Request):
+    """Endpoint que recibe mensajes de Telegram"""
+
+    db = SessionLocal()
+
+    try:
+        # Parsear el update de Telegram
+        update = await request.json()
+        print(f"Telegram update received: {update}")
+
+        # Verificar que hay un mensaje
+        if "message" not in update:
+            return JSONResponse(content={"ok": True})
+
+        message = update["message"]
+
+        # Extraer datos del mensaje
+        telegram_user_id = str(message["from"]["id"])
+        chat_id = message["chat"]["id"]
+        text = message.get("text", "")
+
+        if not text:
+            return JSONResponse(content={"ok": True})
+
+        # Buscar o crear usuario (usando telegram_user_id como phone_number temporal)
+        user_identifier = f"telegram:{telegram_user_id}"
+        user = db.query(User).filter_by(phone_number=user_identifier).first()
+        if not user:
+            user = User(
+                phone_number=user_identifier,
+                name=message["from"].get("first_name", "Usuario")
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+
+        # Procesar mensaje
+        handler = GoalConversationHandler(db, claude_client)
+        response_text = handler.handle_message(user.id, user_identifier, text)
+
+        # Log para debug
+        print(f"Telegram - Received from {telegram_user_id}: {text}")
+        print(f"Telegram - Response: {response_text}")
+
+        # Enviar respuesta a Telegram
+        telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
+        telegram_api_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
+
+        response = requests.post(telegram_api_url, json={
+            "chat_id": chat_id,
+            "text": response_text
+        })
+
+        if response.status_code == 200:
+            print(f"Telegram - Message sent successfully")
+        else:
+            print(f"Telegram - Error sending message: {response.text}")
+
+        return JSONResponse(content={"ok": True})
+
+    except Exception as e:
+        import traceback
+        print(f"ERROR in telegram_webhook: {e}")
+        print(traceback.format_exc())
+        return JSONResponse(content={"ok": False, "error": str(e)})
 
     finally:
         db.close()
