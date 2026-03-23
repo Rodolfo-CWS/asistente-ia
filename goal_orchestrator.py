@@ -2,6 +2,7 @@ from typing import Dict, Any, Optional, List
 from processors.fitness_processor import FitnessGoalProcessor
 from processors.learning_processor import LearningGoalProcessor
 from processors.productivity_processor import ProductivityGoalProcessor
+from models import Goal, ProgressLog
 
 class GoalOrchestrator:
     """

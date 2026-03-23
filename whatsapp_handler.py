@@ -5,6 +5,7 @@ Manejador de conversaciones de WhatsApp para crear y gestionar objetivos
 from typing import Dict, Any, Optional
 from enum import Enum
 from goal_orchestrator import GoalOrchestrator
+from models import Goal
 
 class ConversationState(Enum):
     """Estados de la conversación"""
