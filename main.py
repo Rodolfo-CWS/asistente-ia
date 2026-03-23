@@ -56,15 +56,19 @@ async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...)):
         print(f"Received from {phone}: {Body}")
         print(f"Response to send: {response_text}")
 
+        # Limpiar el texto de respuesta (remover saltos de línea múltiples)
+        response_text_clean = response_text.strip()
+
         # Crear respuesta de Twilio
         resp = MessagingResponse()
-        resp.message(response_text)
+        resp.message(response_text_clean)
 
         # Log de la respuesta XML
         xml_response = str(resp)
-        print(f"TwiML Response: {xml_response}")
+        print(f"TwiML Response length: {len(xml_response)} chars")
+        print(f"TwiML Response: {xml_response[:500]}...")  # Primeros 500 caracteres
 
-        return Response(content=xml_response, media_type="application/xml")
+        return Response(content=xml_response, media_type="application/xml; charset=utf-8")
 
     except Exception as e:
         # Log el error completo
