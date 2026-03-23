@@ -52,11 +52,19 @@ async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...)):
         handler = GoalConversationHandler(db, claude_client)
         response_text = handler.handle_message(user.id, phone, Body)
 
+        # Log para debug
+        print(f"Received from {phone}: {Body}")
+        print(f"Response to send: {response_text}")
+
         # Crear respuesta de Twilio
         resp = MessagingResponse()
         resp.message(response_text)
 
-        return Response(content=str(resp), media_type="application/xml")
+        # Log de la respuesta XML
+        xml_response = str(resp)
+        print(f"TwiML Response: {xml_response}")
+
+        return Response(content=xml_response, media_type="application/xml")
 
     except Exception as e:
         # Log el error completo
