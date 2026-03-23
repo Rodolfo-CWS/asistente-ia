@@ -67,15 +67,24 @@ class GoalConversationHandler:
     def _classify_intent(self, message: str, context: Dict) -> Dict[str, Any]:
         """
         Usa Claude API para clasificar la intención del mensaje.
-
-        En producción, esto llamaría a Claude API con un prompt optimizado.
-        Por ahora, lógica simplificada basada en keywords.
+        Con fallback a keywords si Claude falla.
         """
 
         # Si hay un flujo de creación de objetivo en progreso, continuar con él
         if 'goal_creation' in context:
             return {'type': 'create_goal', 'confidence': 1.0}
 
+        # Intentar usar Claude API para clasificación semántica
+        try:
+            from claude_helpers import classify_intent_with_claude
+            intent = classify_intent_with_claude(self.claude, message, context)
+            return intent
+        except Exception as e:
+            # Fallback a keywords si Claude falla
+            print(f"Claude API failed, using keyword fallback: {e}")
+            pass
+
+        # Fallback: lógica basada en keywords
         message_lower = message.lower()
 
         # Keywords para crear objetivo
@@ -453,6 +462,12 @@ Ejemplos de lo que puedes decir:
     
     def _general_conversation(self, message: str, context: Dict) -> str:
         """Conversación general usando Claude"""
-        
-        # Aquí se llamaría a Claude API para una conversación natural
-        return "Interesante. ¿Puedes contarme más sobre eso?"
+
+        try:
+            from claude_helpers import general_conversation_with_claude
+            response = general_conversation_with_claude(self.claude, message, context)
+            return response
+        except Exception as e:
+            print(f"Claude conversation failed: {e}")
+            # Fallback a respuesta genérica
+            return "Interesante. ¿Puedes contarme más sobre eso?"
