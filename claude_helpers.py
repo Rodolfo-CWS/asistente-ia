@@ -29,7 +29,7 @@ Responde SOLO con JSON:
 {{"type": "...", "confidence": 0.0-1.0}}"""
 
     message = claude_client.messages.create(
-        model="claude-3-5-sonnet-20240620",
+        model="claude-haiku-4-5-20251001",
         max_tokens=100,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -94,7 +94,7 @@ Si no hay nueva información, devuelve {{}}.
 Responde SOLO con JSON:"""
 
     message = claude_client.messages.create(
-        model="claude-3-5-sonnet-20240620",
+        model="claude-haiku-4-5-20251001",
         max_tokens=200,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -140,7 +140,7 @@ Haz tu mejor estimación de calorías y macros basado en porciones típicas.
 Responde SOLO con JSON válido:"""
 
     message = claude_client.messages.create(
-        model="claude-3-5-sonnet-20240620",
+        model="claude-haiku-4-5-20251001",
         max_tokens=1000,
         messages=[{"role": "user", "content": prompt}]
     )
@@ -185,7 +185,7 @@ Mantén respuestas breves (2-3 oraciones máximo)."""
     messages.append({"role": "user", "content": message})
     
     response = claude_client.messages.create(
-        model="claude-3-5-sonnet-20240620",
+        model="claude-haiku-4-5-20251001",
         max_tokens=150,
         system=system_prompt,
         messages=messages
