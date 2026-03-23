@@ -94,6 +94,32 @@ def health_check():
             "error": str(e)
         }
 
+@app.get("/test-bot")
+def test_bot():
+    """Test endpoint to verify bot logic works"""
+    try:
+        db = SessionLocal()
+
+        # Test crear handler
+        handler = GoalConversationHandler(db, claude_client)
+
+        # Test mensaje simple
+        response = handler.handle_message(1, "+5214444844003", "hola")
+
+        db.close()
+
+        return {
+            "status": "success",
+            "response": response
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 # ==========================================
 # REST API ENDPOINTS FOR DASHBOARD
 # ==========================================
