@@ -75,15 +75,15 @@ class GoalConversationHandler:
         if 'goal_creation' in context:
             return {'type': 'create_goal', 'confidence': 1.0}
 
-        # Intentar usar Claude API para clasificación semántica
-        try:
-            from claude_helpers import classify_intent_with_claude
-            intent = classify_intent_with_claude(self.claude, message, context)
-            return intent
-        except Exception as e:
-            # Fallback a keywords si Claude falla
-            print(f"Claude API failed, using keyword fallback: {e}")
-            pass
+        # TEMPORALMENTE DESACTIVADO: Intentar usar Claude API para clasificación semántica
+        # try:
+        #     from claude_helpers import classify_intent_with_claude
+        #     intent = classify_intent_with_claude(self.claude, message, context)
+        #     return intent
+        # except Exception as e:
+        #     # Fallback a keywords si Claude falla
+        #     print(f"Claude API failed, using keyword fallback: {e}")
+        #     pass
 
         # Fallback: lógica basada en keywords
         message_lower = message.lower()
@@ -464,11 +464,12 @@ Ejemplos de lo que puedes decir:
     def _general_conversation(self, message: str, context: Dict) -> str:
         """Conversación general usando Claude"""
 
-        try:
-            from claude_helpers import general_conversation_with_claude
-            response = general_conversation_with_claude(self.claude, message, context)
-            return response
-        except Exception as e:
-            print(f"Claude conversation failed: {e}")
-            # Fallback a respuesta genérica
-            return "Interesante. ¿Puedes contarme más sobre eso?"
+        # TEMPORALMENTE DESACTIVADO para debugging
+        # try:
+        #     from claude_helpers import general_conversation_with_claude
+        #     response = general_conversation_with_claude(self.claude, message, context)
+        #     return response
+        # except Exception as e:
+        #     print(f"Claude conversation failed: {e}")
+        #     # Fallback a respuesta genérica
+        return "Interesante. ¿Puedes contarme más sobre eso?"
