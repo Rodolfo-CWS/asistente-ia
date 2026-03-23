@@ -33,31 +33,42 @@ claude_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(From: str = Form(...), Body: str = Form(...)):
     """Endpoint que recibe mensajes de WhatsApp vía Twilio"""
-    
+
     # Crear sesión de DB
     db = SessionLocal()
-    
+
     try:
         # Extraer número de teléfono (quitar "whatsapp:")
         phone = From.replace("whatsapp:", "")
-        
+
         # Buscar o crear usuario
         user = db.query(User).filter_by(phone_number=phone).first()
         if not user:
             user = User(phone_number=phone)
             db.add(user)
             db.commit()
-        
+
         # Procesar mensaje
         handler = GoalConversationHandler(db, claude_client)
         response_text = handler.handle_message(user.id, phone, Body)
-        
+
         # Crear respuesta de Twilio
         resp = MessagingResponse()
         resp.message(response_text)
-        
+
         return Response(content=str(resp), media_type="application/xml")
-    
+
+    except Exception as e:
+        # Log el error completo
+        import traceback
+        print(f"ERROR in whatsapp_webhook: {e}")
+        print(traceback.format_exc())
+
+        # Responder con mensaje de error al usuario
+        resp = MessagingResponse()
+        resp.message("Lo siento, hubo un error procesando tu mensaje. Por favor intenta de nuevo.")
+        return Response(content=str(resp), media_type="application/xml")
+
     finally:
         db.close()
 
