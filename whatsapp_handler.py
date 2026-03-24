@@ -7,6 +7,7 @@ from enum import Enum
 from goal_orchestrator import GoalOrchestrator
 from models import Goal, ConversationContext
 from datetime import datetime
+import re
 
 class ConversationState(Enum):
     """Estados de la conversación"""
